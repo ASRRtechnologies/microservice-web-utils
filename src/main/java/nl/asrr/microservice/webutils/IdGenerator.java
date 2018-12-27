@@ -10,6 +10,9 @@ import java.util.Base64;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * A threadsafe id generator to generate unique ids with.
+ */
 public class IdGenerator {
 
     private final SecureRandom random;
