@@ -9,6 +9,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A threadsafe id generator to generate unique ids with.
@@ -18,6 +19,8 @@ public class IdGenerator {
     private final SecureRandom random;
 
     private AtomicInteger counter;
+
+    private AtomicReference<byte[]> cachedMachineHash = new AtomicReference<>();
 
     IdGenerator(byte[] seed) {
         random = new SecureRandom(seed);
@@ -38,9 +41,15 @@ public class IdGenerator {
         byte[] randomByte = new byte[1];
         random.nextBytes(randomByte);
 
+        byte[] machineHash = cachedMachineHash.get();
+        if (machineHash == null) {
+            cachedMachineHash.set(getMachineHash());
+            machineHash = cachedMachineHash.get();
+        }
+
         return generate(
                 System.currentTimeMillis(),
-                getMachineHash(),
+                machineHash,
                 randomByte[0],
                 counter.getAndIncrement()
         );
