@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
@@ -29,6 +30,12 @@ public class DefaultGlobalExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     public PropertyError notFoundException(NotFoundException e) {
         return PropertyError.of(e.getProperty(), "NotFound");
+    }
+
+    @ResponseStatus(CONFLICT)
+    @ExceptionHandler(DuplicateException.class)
+    public PropertyError duplicateException(DuplicateException e) {
+        return PropertyError.of(e.getProperty(), "Unique");
     }
 
     @ResponseStatus(BAD_REQUEST)
