@@ -3,7 +3,8 @@ package nl.asrr.microservice.webutils.authorization;
 import com.google.common.base.Strings;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
-import nl.asrr.microservice.webutils.exception.PropertyError;
+import nl.asrr.microservice.webutils.exception.propertyerror.PropertyError;
+import nl.asrr.microservice.webutils.exception.propertyerror.factory.PropertyErrorFactory;
 import nl.asrr.microservice.webutils.io.HttpServletResponseWriter;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
@@ -67,10 +68,15 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
             chain.doFilter(request, response);
         } catch (JwtException | IllegalArgumentException e) {
+            PropertyError propertyError = PropertyErrorFactory.of(
+                    "token",
+                    "Invalid",
+                    "auth token is invalid or expired"
+            );
             HttpServletResponseWriter.write(
                     response,
                     HttpServletResponse.SC_FORBIDDEN,
-                    PropertyError.of("token", "Invalid").toPrettyJson()
+                    propertyError.toPrettyJson()
             );
         }
     }

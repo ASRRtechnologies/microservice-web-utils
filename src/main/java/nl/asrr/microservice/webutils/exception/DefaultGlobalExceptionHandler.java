@@ -1,5 +1,12 @@
 package nl.asrr.microservice.webutils.exception;
 
+import nl.asrr.microservice.webutils.exception.impl.DuplicateException;
+import nl.asrr.microservice.webutils.exception.impl.InvalidInputException;
+import nl.asrr.microservice.webutils.exception.impl.JsonParseException;
+import nl.asrr.microservice.webutils.exception.impl.NotFoundException;
+import nl.asrr.microservice.webutils.exception.propertyerror.factory.FieldPropertyErrorFactory;
+import nl.asrr.microservice.webutils.exception.propertyerror.PropertyError;
+import nl.asrr.microservice.webutils.exception.propertyerror.factory.PropertyErrorFactory;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -23,49 +30,53 @@ public class DefaultGlobalExceptionHandler {
     @ResponseStatus(BAD_REQUEST)
     @ExceptionHandler(InvalidInputException.class)
     public PropertyError invalidInputException(InvalidInputException e) {
-        return PropertyError.of(e.getProperty(), e.getErrorCode());
+        return PropertyErrorFactory.of(e.getProperty(), e.getErrorCode(), e.getErrorMessage());
     }
 
     @ResponseStatus(NOT_FOUND)
     @ExceptionHandler(NotFoundException.class)
     public PropertyError notFoundException(NotFoundException e) {
-        return PropertyError.of(e.getProperty(), "NotFound");
+        return PropertyErrorFactory.of(e);
     }
 
     @ResponseStatus(CONFLICT)
     @ExceptionHandler(DuplicateException.class)
     public PropertyError duplicateException(DuplicateException e) {
-        return PropertyError.of(e.getProperty(), "Unique");
+        return PropertyErrorFactory.of(e);
     }
 
     @ResponseStatus(BAD_REQUEST)
     @ExceptionHandler(ConversionFailedException.class)
     public PropertyError conversionFailedException(ConversionFailedException e) {
-        return PropertyError.of(e);
+        return PropertyErrorFactory.of(e);
     }
 
     @ResponseStatus(BAD_REQUEST)
     @ExceptionHandler({HttpMessageNotReadableException.class, JsonParseException.class})
     public PropertyError jsonParseException() {
-        return PropertyError.of("json", "Invalid");
+        return PropertyErrorFactory.of(
+                "json",
+                "Invalid",
+                "provided json is invalid"
+        );
     }
 
     @ResponseStatus(BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public PropertyError methodArgumentValidationException(MethodArgumentNotValidException e) {
-        return PropertyError.of(e);
+        return FieldPropertyErrorFactory.of(e);
     }
 
     @ResponseStatus(METHOD_NOT_ALLOWED)
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public PropertyError httpMethodNotAllowed(HttpRequestMethodNotSupportedException e) {
-        return PropertyError.of(e);
+        return PropertyErrorFactory.of(e);
     }
 
     @ResponseStatus(UNSUPPORTED_MEDIA_TYPE)
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public PropertyError unsupportedMedia(HttpMediaTypeNotSupportedException e) {
-        return PropertyError.of(e);
+        return PropertyErrorFactory.of(e);
     }
 
 }

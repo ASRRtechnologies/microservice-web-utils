@@ -1,6 +1,5 @@
-package nl.asrr.microservice.webutils.exception;
+package nl.asrr.microservice.webutils.exception.impl;
 
-import lombok.Data;
 import lombok.Getter;
 
 @Getter

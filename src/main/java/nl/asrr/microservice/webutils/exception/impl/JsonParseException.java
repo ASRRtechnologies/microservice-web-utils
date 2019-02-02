@@ -1,4 +1,4 @@
-package nl.asrr.microservice.webutils.exception;
+package nl.asrr.microservice.webutils.exception.impl;
 
 public class JsonParseException extends RuntimeException {
 

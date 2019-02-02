@@ -1,4 +1,4 @@
-package nl.asrr.microservice.webutils.exception;
+package nl.asrr.microservice.webutils.exception.impl;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

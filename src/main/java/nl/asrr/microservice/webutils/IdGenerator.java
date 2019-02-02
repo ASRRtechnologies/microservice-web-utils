@@ -16,17 +16,34 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class IdGenerator {
 
+    /**
+     * A random number generator.
+     */
     private final SecureRandom random;
 
+    /**
+     * The local counter.
+     */
     private AtomicInteger counter;
 
+    /**
+     * Contains a cached instance of the machine hash.
+     */
     private AtomicReference<byte[]> cachedMachineHash = new AtomicReference<>();
 
+    /**
+     * Constructs an {@link IdGenerator} with predictable output.
+     *
+     * @param seed the seed for the random number generator
+     */
     IdGenerator(byte[] seed) {
         random = new SecureRandom(seed);
         counter = new AtomicInteger(random.nextInt());
     }
 
+    /**
+     * Constructs an {@link IdGenerator}.
+     */
     public IdGenerator() {
         random = new SecureRandom();
         counter = new AtomicInteger(random.nextInt());
@@ -38,21 +55,15 @@ public class IdGenerator {
      * @return an unique id
      */
     public String generate() {
-        byte[] randomByte = new byte[1];
-        random.nextBytes(randomByte);
+        byte[] randomByteArray = new byte[1];
+        random.nextBytes(randomByteArray);
 
-        byte[] machineHash = cachedMachineHash.get();
-        if (machineHash == null) {
-            cachedMachineHash.set(getMachineHash());
-            machineHash = cachedMachineHash.get();
-        }
+        long localTime = System.currentTimeMillis();
+        byte[] machineHash = getMachineHash();
+        byte randomByte = randomByteArray[0];
+        int counterValue = counter.getAndIncrement();
 
-        return generate(
-                System.currentTimeMillis(),
-                machineHash,
-                randomByte[0],
-                counter.getAndIncrement()
-        );
+        return generate(localTime, machineHash, randomByte, counterValue);
     }
 
     /**
@@ -92,6 +103,20 @@ public class IdGenerator {
     }
 
     /**
+     * Lazily returns the machine hash.
+     *
+     * @return the machine hash
+     */
+    private byte[] getMachineHash() {
+        byte[] machineHash = cachedMachineHash.get();
+        if (machineHash == null) {
+            cachedMachineHash.set(generateMachineHash());
+            machineHash = cachedMachineHash.get();
+        }
+        return machineHash;
+    }
+
+    /**
      * Takes the first 12 bits from the {@code hash}.
      *
      * @param hash the hash of the machine
@@ -111,8 +136,8 @@ public class IdGenerator {
      *
      * @return a sha256 hash from the network interfaces of this device
      */
-    private byte[] getMachineHash() {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    private byte[] generateMachineHash() {
+        ByteArrayOutputStream macAddresses = new ByteArrayOutputStream();
         try {
             Enumeration<NetworkInterface> networkInterfaces
                     = NetworkInterface.getNetworkInterfaces();
@@ -120,10 +145,10 @@ public class IdGenerator {
                 NetworkInterface networkInterface = networkInterfaces.nextElement();
                 byte[] mac = networkInterface.getHardwareAddress();
                 if (mac != null) {
-                    outputStream.write(mac);
+                    macAddresses.write(mac);
                 }
             }
-            return DigestUtils.sha256(outputStream.toByteArray());
+            return DigestUtils.sha256(macAddresses.toByteArray());
         } catch (Exception e) {
             byte[] machineHash = new byte[32];
             random.nextBytes(machineHash);
