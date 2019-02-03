@@ -4,8 +4,8 @@ import nl.asrr.microservice.webutils.exception.impl.DuplicateException;
 import nl.asrr.microservice.webutils.exception.impl.InvalidInputException;
 import nl.asrr.microservice.webutils.exception.impl.JsonParseException;
 import nl.asrr.microservice.webutils.exception.impl.NotFoundException;
-import nl.asrr.microservice.webutils.exception.propertyerror.factory.FieldPropertyErrorFactory;
 import nl.asrr.microservice.webutils.exception.propertyerror.PropertyError;
+import nl.asrr.microservice.webutils.exception.propertyerror.factory.FieldPropertyErrorFactory;
 import nl.asrr.microservice.webutils.exception.propertyerror.factory.PropertyErrorFactory;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -36,13 +36,13 @@ public class DefaultGlobalExceptionHandler {
     @ResponseStatus(NOT_FOUND)
     @ExceptionHandler(NotFoundException.class)
     public PropertyError notFoundException(NotFoundException e) {
-        return PropertyErrorFactory.of(e);
+        return PropertyErrorFactory.of(e.getProperty(), e.getErrorCode(), e.getErrorMessage());
     }
 
     @ResponseStatus(CONFLICT)
     @ExceptionHandler(DuplicateException.class)
     public PropertyError duplicateException(DuplicateException e) {
-        return PropertyErrorFactory.of(e);
+        return PropertyErrorFactory.of(e.getProperty(), e.getErrorCode(), e.getErrorMessage());
     }
 
     @ResponseStatus(BAD_REQUEST)

@@ -1,7 +1,5 @@
 package nl.asrr.microservice.webutils.exception.propertyerror.factory;
 
-import nl.asrr.microservice.webutils.exception.impl.DuplicateException;
-import nl.asrr.microservice.webutils.exception.impl.NotFoundException;
 import nl.asrr.microservice.webutils.exception.propertyerror.ErrorDetails;
 import nl.asrr.microservice.webutils.exception.propertyerror.PropertyError;
 import org.springframework.core.convert.ConversionFailedException;
@@ -45,24 +43,6 @@ public class PropertyErrorFactory {
                 e.getTargetType().getType().getSimpleName());
         return PropertyErrorFactory.of(
                 "unknown", "Conversion", errorMessage
-        );
-    }
-
-    public static PropertyError of(DuplicateException e) {
-        String errorMessage = String.format("%s is not unique", e.getProperty());
-        return PropertyErrorFactory.of(
-                e.getProperty(),
-                "Unique",
-                errorMessage
-        );
-    }
-
-    public static PropertyError of(NotFoundException e) {
-        String errorMessage = String.format("%s has not been found", e.getProperty());
-        return PropertyErrorFactory.of(
-                e.getProperty(),
-                "NotFound",
-                errorMessage
         );
     }
 
