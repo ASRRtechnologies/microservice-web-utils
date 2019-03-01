@@ -26,8 +26,8 @@ public class StringToEnumConverterFactory implements ConverterFactory<String, En
         }
     }
 
-    @Override
     @NonNull
+    @Override
     public <E extends Enum<?>> Converter<String, E> getConverter(@NonNull Class<E> targetType) {
         return new StringToEnumConverter<>(targetType);
     }
