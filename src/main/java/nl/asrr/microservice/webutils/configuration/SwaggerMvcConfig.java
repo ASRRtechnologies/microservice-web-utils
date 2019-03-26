@@ -1,11 +1,7 @@
-package nl.asrr.microservice.webutils;
+package nl.asrr.microservice.webutils.configuration;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.format.FormatterRegistry;
-import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
@@ -18,9 +14,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
-import java.util.List;
 
-public abstract class WebMvcConfig extends WebMvcConfigurationSupport {
+public abstract class SwaggerMvcConfig extends WebMvcConfig {
 
     private static final Class[] ignoredModels = {
             InputStream.class, File.class, URI.class, URL.class
@@ -44,24 +39,14 @@ public abstract class WebMvcConfig extends WebMvcConfigurationSupport {
 
     private ApiInfo metaData() {
         return new ApiInfoBuilder()
-                .title(String.format("ASRR %s REST API", applicationName))
-                .description(String.format("ASRR REST API for %s", applicationName))
+                .title(String.format("ASRR %s RESTful API", applicationName))
+                .description(String.format("ASRR RESTful API for %s", applicationName))
                 .contact(new Contact(
                         "ASRR Software Development",
                         "https://asrr.nl",
-                        "contact@asrr.nl"
+                        "support@asrr.nl"
                 ))
                 .build();
-    }
-
-    @Override
-    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
-        argumentResolvers.add(new AuthenticationPrincipalArgumentResolver());
-    }
-
-    @Override
-    public void addFormatters(FormatterRegistry registry) {
-        registry.addConverterFactory(new StringToEnumConverterFactory());
     }
 
     @Override
