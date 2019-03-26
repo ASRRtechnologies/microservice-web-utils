@@ -1,9 +1,10 @@
 package nl.asrr.microservice.webutils.exception.impl;
 
-import lombok.Data;
+import lombok.Getter;
+import nl.asrr.microservice.webutils.exception.ServiceException;
 
-@Data
-public class InvalidInputException extends RuntimeException {
+@Getter
+public class InvalidInputException extends ServiceException {
 
     private final String property;
 

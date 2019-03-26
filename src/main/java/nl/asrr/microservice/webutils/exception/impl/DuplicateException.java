@@ -1,9 +1,10 @@
 package nl.asrr.microservice.webutils.exception.impl;
 
 import lombok.Getter;
+import nl.asrr.microservice.webutils.exception.ServiceException;
 
 @Getter
-public class DuplicateException extends RuntimeException {
+public class DuplicateException extends ServiceException {
 
     private final String property;
 
