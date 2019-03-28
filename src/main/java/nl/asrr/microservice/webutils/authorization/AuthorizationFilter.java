@@ -3,6 +3,9 @@ package nl.asrr.microservice.webutils.authorization;
 import com.google.common.base.Strings;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import lombok.extern.log4j.Log4j2;
+import nl.asrr.microservice.webutils.amqp.FailableRabbitTemplate;
 import nl.asrr.microservice.webutils.exception.propertyerror.PropertyError;
 import nl.asrr.microservice.webutils.exception.propertyerror.factory.PropertyErrorFactory;
 import nl.asrr.microservice.webutils.io.HttpServletResponseWriter;
@@ -13,35 +16,53 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+@Log4j2
 @Order(1)
 public class AuthorizationFilter extends OncePerRequestFilter {
 
-    /**
-     * The JWT processor.
-     */
-    private final JwtProcessor jwtProcessor;
+    private final FailableRabbitTemplate amqp;
 
     /**
-     * The name of the authorization header.
+     * A secret key to validate the JWT.
      */
-    private final String authorizationHeader;
+    private byte[] secretKey;
 
     /**
-     * Constructs an {@link AuthorizationFilter}.
-     *
-     * @param jwtProcessor        the JWT processor
-     * @param authorizationHeader name of the authorization header
+     * Name of the HTTP header that contains the JWT.
      */
-    public AuthorizationFilter(JwtProcessor jwtProcessor, String authorizationHeader) {
-        this.jwtProcessor = jwtProcessor;
-        this.authorizationHeader = authorizationHeader;
+    private String authHeaderName;
+
+
+    public AuthorizationFilter(FailableRabbitTemplate amqp) {
+        this.amqp = amqp;
+    }
+
+    @PostConstruct
+    public void init() {
+        byte[] secretKey;
+        do {
+            secretKey = amqp.sendFailableAndReceiveAsType("jwt.secretKey", "", byte[].class);
+        } while (secretKey == null);
+
+        String authHeaderName;
+        do {
+            authHeaderName = amqp.sendFailableAndReceiveAsType("jwt.authHeaderName", "", String.class);
+        } while (authHeaderName == null);
+
+        this.secretKey = secretKey;
+        this.authHeaderName = authHeaderName;
+        log.info("successfully received auth info");
     }
 
     @Override
@@ -50,7 +71,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain chain
     ) throws IOException, ServletException {
-        String jwt = request.getHeader(authorizationHeader);
+        String jwt = request.getHeader(authHeaderName);
 
         if (Strings.isNullOrEmpty(jwt)) {
             chain.doFilter(request, response);
@@ -58,9 +79,9 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         }
 
         try {
-            Claims claims = jwtProcessor.parse(jwt);
+            Claims claims = parse(jwt);
             String userId = claims.getSubject();
-            List<SimpleGrantedAuthority> authorities = jwtProcessor.parseAuthorities(claims);
+            List<SimpleGrantedAuthority> authorities = parseAuthorities(claims);
 
             SecurityContextHolder.getContext().setAuthentication(
                     new PreAuthenticatedAuthenticationToken(userId, null, authorities)
@@ -79,6 +100,30 @@ public class AuthorizationFilter extends OncePerRequestFilter {
                     propertyError.toPrettyJson()
             );
         }
+    }
+
+    private Claims parse(String jwt) {
+        return Jwts.parser()
+                .setSigningKey(secretKey)
+                .parseClaimsJws(jwt)
+                .getBody();
+    }
+
+    private List<SimpleGrantedAuthority> parseAuthorities(Claims claims) {
+        Collection<?> authoritiesMap
+                = claims.get("authorities", Collection.class);
+
+        return authoritiesMap.stream().map(
+                o -> {
+                    if (o instanceof Map) {
+                        Object value = ((Map) o).get("authority");
+                        if (value instanceof String) {
+                            return new SimpleGrantedAuthority((String) value);
+                        }
+                    }
+                    throw new IllegalArgumentException("invalid authority");
+                }
+        ).collect(Collectors.toList());
     }
 
 }

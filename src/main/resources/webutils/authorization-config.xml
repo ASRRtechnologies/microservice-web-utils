@@ -3,16 +3,6 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-    <bean id="jwtProcessor" class="nl.asrr.microservice.webutils.authorization.JwtProcessor">
-        <constructor-arg name="secretKey" value="!PL:$w_Y*ZtLTZ7~9"/>
-        <constructor-arg name="tokenExpirationDuration" value="7"/>
-    </bean>
-
-    <bean class="nl.asrr.microservice.webutils.authorization.AuthorizationFilter">
-        <constructor-arg ref="jwtProcessor"/>
-        <constructor-arg name="authorizationHeader" value="X-Auth-Token"/>
-    </bean>
-
     <bean id="roleHierarchy" class="org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl">
         <property name="hierarchy">
             <value>
