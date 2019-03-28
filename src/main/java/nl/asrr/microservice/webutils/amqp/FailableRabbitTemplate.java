@@ -104,6 +104,10 @@ public class FailableRabbitTemplate {
                 }
         );
 
+        if (response == null) {
+            return null;
+        }
+
         RuntimeException exception = response.getException();
         if (exception != null) {
             throw exception;

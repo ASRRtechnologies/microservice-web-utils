@@ -1,4 +1,4 @@
-package nl.asrr.microservice.webutils.security;
+package nl.asrr.microservice.webutils.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
