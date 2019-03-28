@@ -11,11 +11,7 @@ public class FailableListenerAspect {
     public FailableMessage failableMessage(ProceedingJoinPoint joinPoint) throws Throwable {
         FailableMessage<Object> message = new FailableMessage<>();
         try {
-            Object returnValue = joinPoint.proceed();
-            if (returnValue instanceof FailableMessage) {
-                return (FailableMessage) returnValue;
-            }
-            throw new IllegalReturnValueException(returnValue.getClass().getName());
+            return (FailableMessage) joinPoint.proceed();
         } catch (RuntimeException e) {
             message.setException(e);
         }

@@ -3,8 +3,6 @@ package nl.asrr.microservice.webutils.configuration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.asrr.microservice.webutils.StringToEnumConverterFactory;
 import nl.asrr.microservice.webutils.amqp.FailableListenerAspect;
-import nl.asrr.microservice.webutils.amqp.FailableRabbitTemplate;
-import nl.asrr.microservice.webutils.authorization.AuthorizationFilter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
@@ -20,11 +18,6 @@ public abstract class WebMvcConfig extends WebMvcConfigurationSupport {
     @Bean
     public FailableListenerAspect failableListenerAspect() {
         return new FailableListenerAspect();
-    }
-
-    @Bean
-    public AuthorizationFilter authorizationFilter(FailableRabbitTemplate amqp) {
-        return new AuthorizationFilter(amqp);
     }
 
     @Bean
