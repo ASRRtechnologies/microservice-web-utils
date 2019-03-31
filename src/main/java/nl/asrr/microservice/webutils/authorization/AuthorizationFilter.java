@@ -49,7 +49,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
     }
 
     @PostConstruct
-    public void init() {
+    private void init() {
         byte[] secretKey;
         do {
             secretKey = amqp.sendFailableAndReceiveAsType("jwt.secretKey", "", byte[].class);
