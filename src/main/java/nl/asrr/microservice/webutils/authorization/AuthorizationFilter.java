@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @Order(1)
 public class AuthorizationFilter extends OncePerRequestFilter {
 
-    private final FailableRabbitTemplate amqp;
+    private final FailableRabbitTemplate mq;
 
     /**
      * A secret key to validate the JWT.
@@ -44,20 +44,20 @@ public class AuthorizationFilter extends OncePerRequestFilter {
     private String authHeaderName;
 
 
-    public AuthorizationFilter(FailableRabbitTemplate amqp) {
-        this.amqp = amqp;
+    public AuthorizationFilter(FailableRabbitTemplate mq) {
+        this.mq = mq;
     }
 
     @PostConstruct
     private void init() {
         byte[] secretKey;
         do {
-            secretKey = amqp.sendFailableAndReceiveAsType("auth", "auth.jwt.secretKey", "");
+            secretKey = mq.sendFailableAndReceiveAsType("auth", "auth.jwt.secretKey", "");
         } while (secretKey == null);
 
         String authHeaderName;
         do {
-            authHeaderName = amqp.sendFailableAndReceiveAsType("auth", "auth.jwt.authHeaderName", "");
+            authHeaderName = mq.sendFailableAndReceiveAsType("auth", "auth.jwt.authHeaderName", "");
         } while (authHeaderName == null);
 
         this.secretKey = secretKey;

@@ -15,19 +15,19 @@ import java.util.stream.Collectors;
 @Log4j2
 public class AmqpRoleHierarchy implements RoleHierarchy {
 
-    private final FailableRabbitTemplate amq;
+    private final FailableRabbitTemplate mq;
 
     private List<PersistentRole> roles;
 
-    public AmqpRoleHierarchy(FailableRabbitTemplate amq) {
-        this.amq = amq;
+    public AmqpRoleHierarchy(FailableRabbitTemplate mq) {
+        this.mq = mq;
     }
 
     @PostConstruct
     private void init() {
         List<PersistentRole> roles;
         do {
-            roles = amq.sendFailableAndReceiveAsType("auth", "auth.getRoleHierarchy", "");
+            roles = mq.sendFailableAndReceiveAsType("auth", "auth.getRoleHierarchy", "");
         } while (roles == null);
 
         this.roles = roles;
