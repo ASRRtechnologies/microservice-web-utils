@@ -3,18 +3,13 @@ package nl.asrr.microservice.webutils;
 import lombok.extern.log4j.Log4j2;
 import nl.asrr.microservice.webutils.amqp.FailableRabbitTemplate;
 import nl.asrr.microservice.webutils.amqp.model.PersistentRole;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -32,12 +27,7 @@ public class AmqpRoleHierarchy implements RoleHierarchy {
     private void init() {
         List<PersistentRole> roles;
         do {
-            roles = amq.sendFailableAndReceiveAsType(
-                    "auth.getRoleHierarchy",
-                    "",
-                    new ParameterizedTypeReference<List<PersistentRole>>() {
-                    }
-            );
+            roles = amq.sendFailableAndReceiveAsType("auth.getRoleHierarchy", "");
         } while (roles == null);
 
         this.roles = roles;
