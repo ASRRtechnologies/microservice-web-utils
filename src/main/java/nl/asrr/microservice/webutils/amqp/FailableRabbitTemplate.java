@@ -17,85 +17,31 @@ public class FailableRabbitTemplate {
         rabbitTemplate.convertAndSend(exchange, routingKey, message);
     }
 
-    public <T> T sendAndReceiveAsType(
-            String routingKey, Object message,
-            Class<T> responseType
-    ) {
-        return sendAndReceiveAsType(
-                routingKey, message,
-                new ParameterizedTypeReference<T>() {
-                }
-        );
+    public <T> T sendAndReceiveAsType(String routingKey, Object message) {
+        return rabbitTemplate.convertSendAndReceiveAsType(
+                rabbitTemplate.getExchange(), routingKey, message, new ParameterizedTypeReference<T>() {
+                });
     }
 
-    public <T> T sendAndReceiveAsType(
-            String exchange, String routingKey, Object message,
-            Class<T> responseType
-    ) {
-        return sendAndReceiveAsType(
-                exchange, routingKey, message,
-                new ParameterizedTypeReference<T>() {
-                }
-        );
-    }
-
-    public <T> T sendAndReceiveAsType(
-            String routingKey, Object message,
-            ParameterizedTypeReference<T> responseType
-    ) {
-        return rabbitTemplate.convertSendAndReceiveAsType(routingKey, message, responseType);
-    }
-
-    public <T> T sendAndReceiveAsType(
-            String exchange, String routingKey, Object message,
-            ParameterizedTypeReference<T> responseType
-    ) {
+    public <T> T sendAndReceiveAsType(String exchange, String routingKey, Object message) {
         return rabbitTemplate.convertSendAndReceiveAsType(
                 exchange,
                 routingKey,
                 message,
-                responseType
-        );
-    }
-
-    public <T> T sendFailableAndReceiveAsType(
-            String routingKey, Object message,
-            Class<T> responseType
-    ) {
-        return sendFailableAndReceiveAsType(
-                routingKey, message,
                 new ParameterizedTypeReference<T>() {
                 }
         );
     }
 
-    public <T> T sendFailableAndReceiveAsType(
-            String exchange, String routingKey, Object message,
-            Class<T> responseType
-    ) {
-        return sendFailableAndReceiveAsType(
-                exchange, routingKey, message,
-                new ParameterizedTypeReference<T>() {
-                }
-        );
-    }
-
-    public <T> T sendFailableAndReceiveAsType(
-            String routingKey, Object message,
-            ParameterizedTypeReference<T> responseType
-    ) {
+    public <T> T sendFailableAndReceiveAsType(String routingKey, Object message) {
         return sendFailableAndReceiveAsType(
                 rabbitTemplate.getExchange(),
                 routingKey,
-                message,
-                responseType
+                message
         );
     }
 
-    public <T> T sendFailableAndReceiveAsType(
-            String exchange, String routingKey, Object message,
-            ParameterizedTypeReference<T> responseType
-    ) {
+    public <T> T sendFailableAndReceiveAsType(String exchange, String routingKey, Object message) {
         FailableMessage<T> response = rabbitTemplate.convertSendAndReceiveAsType(
                 exchange,
                 routingKey,
