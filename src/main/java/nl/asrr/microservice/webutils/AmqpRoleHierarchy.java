@@ -27,7 +27,7 @@ public class AmqpRoleHierarchy implements RoleHierarchy {
     private void init() {
         List<PersistentRole> roles;
         do {
-            roles = amq.sendFailableAndReceiveAsType("auth.getRoleHierarchy", "");
+            roles = amq.sendFailableAndReceiveAsType("auth", "auth.getRoleHierarchy", "");
         } while (roles == null);
 
         this.roles = roles;

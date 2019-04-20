@@ -52,12 +52,12 @@ public class AuthorizationFilter extends OncePerRequestFilter {
     private void init() {
         byte[] secretKey;
         do {
-            secretKey = amqp.sendFailableAndReceiveAsType("jwt.secretKey", "");
+            secretKey = amqp.sendFailableAndReceiveAsType("auth", "auth.jwt.secretKey", "");
         } while (secretKey == null);
 
         String authHeaderName;
         do {
-            authHeaderName = amqp.sendFailableAndReceiveAsType("jwt.authHeaderName", "");
+            authHeaderName = amqp.sendFailableAndReceiveAsType("auth", "auth.jwt.authHeaderName", "");
         } while (authHeaderName == null);
 
         this.secretKey = secretKey;
