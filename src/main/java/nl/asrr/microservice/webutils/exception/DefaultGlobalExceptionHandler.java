@@ -4,6 +4,7 @@ import nl.asrr.microservice.webutils.exception.impl.DuplicateException;
 import nl.asrr.microservice.webutils.exception.impl.InvalidInputException;
 import nl.asrr.microservice.webutils.exception.impl.JsonParseException;
 import nl.asrr.microservice.webutils.exception.impl.NotFoundException;
+import nl.asrr.microservice.webutils.exception.impl.ServerException;
 import nl.asrr.microservice.webutils.exception.propertyerror.PropertyError;
 import nl.asrr.microservice.webutils.exception.propertyerror.factory.FieldPropertyErrorFactory;
 import nl.asrr.microservice.webutils.exception.propertyerror.factory.PropertyErrorFactory;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
@@ -56,7 +58,7 @@ public class DefaultGlobalExceptionHandler {
     public PropertyError jsonParseException() {
         return PropertyErrorFactory.of(
                 "json",
-                "Invalid",
+                "InvalidJson",
                 "provided json is invalid"
         );
     }
@@ -77,6 +79,12 @@ public class DefaultGlobalExceptionHandler {
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public PropertyError unsupportedMedia(HttpMediaTypeNotSupportedException e) {
         return PropertyErrorFactory.of(e);
+    }
+
+    @ResponseStatus(INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(ServerException.class)
+    public PropertyError unsupportedMedia(ServerException e) {
+        return PropertyErrorFactory.of("server", "Server", e.getMessage());
     }
 
 }
