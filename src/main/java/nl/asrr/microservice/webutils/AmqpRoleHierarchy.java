@@ -2,7 +2,7 @@ package nl.asrr.microservice.webutils;
 
 import lombok.extern.log4j.Log4j2;
 import nl.asrr.microservice.webutils.amqp.FailableRabbitTemplate;
-import nl.asrr.microservice.webutils.amqp.model.PersistentRole;
+import nl.asrr.microservice.webutils.amqp.model.auth.PersistentRole;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;

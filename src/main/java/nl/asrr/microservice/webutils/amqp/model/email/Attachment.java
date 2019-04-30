@@ -5,20 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DirectEmailRequest {
+public class Attachment {
 
-    private String recipient;
+    private String fileName;
 
-    private String subject;
-
-    private String body;
-
-    private List<Attachment> attachments;
+    private byte[] data;
 
 }

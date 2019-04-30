@@ -1,4 +1,4 @@
-package nl.asrr.microservice.webutils.amqp.model;
+package nl.asrr.microservice.webutils.amqp.model.auth;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
