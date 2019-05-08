@@ -1,13 +1,8 @@
 package nl.asrr.microservice.webutils;
 
-import org.apache.commons.codec.digest.DigestUtils;
-
-import java.io.ByteArrayOutputStream;
-import java.net.NetworkInterface;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -103,20 +98,6 @@ public class IdGenerator {
     }
 
     /**
-     * Lazily returns the machine hash.
-     *
-     * @return the machine hash
-     */
-    private byte[] getMachineHash() {
-        byte[] machineHash = cachedMachineHash.get();
-        if (machineHash == null) {
-            cachedMachineHash.set(generateMachineHash());
-            machineHash = cachedMachineHash.get();
-        }
-        return machineHash;
-    }
-
-    /**
      * Takes the first 12 bits from the {@code hash}.
      *
      * @param hash the hash of the machine
@@ -130,30 +111,17 @@ public class IdGenerator {
     }
 
     /**
-     * Generates a sha256 hash from the network interfaces of this device.
-     * A random byte array of length 32 will be generated if any error occurs
-     * during this operation.
+     * Lazily returns the machine hash.
      *
-     * @return a sha256 hash from the network interfaces of this device
+     * @return the machine hash
      */
-    private byte[] generateMachineHash() {
-        ByteArrayOutputStream macAddresses = new ByteArrayOutputStream();
-        try {
-            Enumeration<NetworkInterface> networkInterfaces
-                    = NetworkInterface.getNetworkInterfaces();
-            while (networkInterfaces.hasMoreElements()) {
-                NetworkInterface networkInterface = networkInterfaces.nextElement();
-                byte[] mac = networkInterface.getHardwareAddress();
-                if (mac != null) {
-                    macAddresses.write(mac);
-                }
-            }
-            return DigestUtils.sha256(macAddresses.toByteArray());
-        } catch (Exception e) {
-            byte[] machineHash = new byte[32];
-            random.nextBytes(machineHash);
-            return machineHash;
+    private byte[] getMachineHash() {
+        byte[] machineHash = cachedMachineHash.get();
+        if (machineHash == null) {
+            cachedMachineHash.set(MachineInfo.getId());
+            machineHash = cachedMachineHash.get();
         }
+        return machineHash;
     }
 
 }
