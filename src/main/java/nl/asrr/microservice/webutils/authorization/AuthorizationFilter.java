@@ -57,7 +57,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         this.authHeaderName = GuaranteedExecutor.execute(
                 () -> mq.sendFailableAndReceiveAsType("auth", "auth.jwt.authHeaderName", "")
         );
-        log.info("successfully received auth V# info");
+        log.info("successfully received auth info");
     }
 
     @Override
