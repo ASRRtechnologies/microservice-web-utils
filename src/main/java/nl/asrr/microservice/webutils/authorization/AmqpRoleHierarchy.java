@@ -30,9 +30,12 @@ public class AmqpRoleHierarchy implements RoleHierarchy {
 
     @PostConstruct
     private void init() {
-        this.roles = GuaranteedExecutor.execute(
-                () -> mq.sendFailableAndReceiveAsType("auth", "auth.getRoleHierarchy", "")
-        );
+        List<PersistentRole> roles;
+        do {
+            roles = mq.sendFailableAndReceiveAsType("auth", "auth.getRoleHierarchy", "");
+        } while (roles == null);
+
+        this.roles = roles;
         log.info("successfully received role hierarchy");
     }
 

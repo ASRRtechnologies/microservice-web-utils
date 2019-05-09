@@ -51,12 +51,18 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
     @PostConstruct
     private void init() {
-        this.secretKey = GuaranteedExecutor.execute(
-                () -> mq.sendFailableAndReceiveAsType("auth", "auth.jwt.secretKey", "")
-        );
-        this.authHeaderName = GuaranteedExecutor.execute(
-                () -> mq.sendFailableAndReceiveAsType("auth", "auth.jwt.authHeaderName", "")
-        );
+        byte[] secretKey;
+        do {
+            secretKey = mq.sendFailableAndReceiveAsType("auth", "auth.jwt.secretKey", "");
+        } while (secretKey == null);
+
+        String authHeaderName;
+        do {
+            authHeaderName = mq.sendFailableAndReceiveAsType("auth", "auth.jwt.authHeaderName", "");
+        } while (authHeaderName == null);
+
+        this.secretKey = secretKey;
+        this.authHeaderName = authHeaderName;
         log.info("successfully received auth info");
     }
 
