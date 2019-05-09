@@ -3,13 +3,18 @@ package nl.asrr.microservice.webutils.authorization;
 import lombok.extern.log4j.Log4j2;
 import nl.asrr.microservice.webutils.amqp.FailableRabbitTemplate;
 import nl.asrr.microservice.webutils.amqp.model.auth.PersistentRole;
+import nl.asrr.microservice.webutils.executor.GuaranteedExecutor;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import javax.annotation.PostConstruct;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -25,12 +30,9 @@ public class AmqpRoleHierarchy implements RoleHierarchy {
 
     @PostConstruct
     private void init() {
-        List<PersistentRole> roles;
-        do {
-            roles = mq.sendFailableAndReceiveAsType("auth", "auth.getRoleHierarchy", "");
-        } while (roles == null);
-
-        this.roles = roles;
+        this.roles = GuaranteedExecutor.execute(
+                () -> mq.sendFailableAndReceiveAsType("auth", "auth.getRoleHierarchy", "")
+        );
         log.info("successfully received role hierarchy");
     }
 
