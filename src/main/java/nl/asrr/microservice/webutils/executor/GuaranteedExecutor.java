@@ -1,13 +1,11 @@
-package nl.asrr.microservice.webutils;
+package nl.asrr.microservice.webutils.executor;
 
 import lombok.extern.log4j.Log4j2;
-
-import java.util.function.Supplier;
 
 @Log4j2
 public class GuaranteedExecutor {
 
-    public static void execute(Runnable runnable) {
+    public static void execute(ExecutorRunnable runnable) {
         do {
             try {
                 runnable.run();
@@ -18,7 +16,7 @@ public class GuaranteedExecutor {
         } while (true);
     }
 
-    public static  <T> T execute(Supplier<T> supplier) {
+    public static <T> T execute(ExecutorSupplier<T> supplier) {
         do {
             try {
                 return supplier.get();
