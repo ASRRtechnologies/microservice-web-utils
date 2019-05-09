@@ -1,4 +1,4 @@
-package nl.asrr.microservice.webutils;
+package nl.asrr.microservice.webutils.authorization;
 
 import lombok.extern.log4j.Log4j2;
 import nl.asrr.microservice.webutils.amqp.FailableRabbitTemplate;
