@@ -2,6 +2,7 @@ package nl.asrr.microservice.webutils.exception;
 
 import nl.asrr.microservice.webutils.exception.impl.DuplicateException;
 import nl.asrr.microservice.webutils.exception.impl.InvalidInputException;
+import nl.asrr.microservice.webutils.exception.impl.InvalidStateException;
 import nl.asrr.microservice.webutils.exception.impl.JsonParseException;
 import nl.asrr.microservice.webutils.exception.impl.NotFoundException;
 import nl.asrr.microservice.webutils.exception.impl.ServerException;
@@ -32,6 +33,12 @@ public class DefaultGlobalExceptionHandler {
     @ResponseStatus(BAD_REQUEST)
     @ExceptionHandler(InvalidInputException.class)
     public PropertyError invalidInputException(InvalidInputException e) {
+        return PropertyErrorFactory.of(e.getProperty(), e.getErrorCode(), e.getErrorMessage());
+    }
+
+    @ResponseStatus(BAD_REQUEST)
+    @ExceptionHandler(InvalidStateException.class)
+    public PropertyError invalidStateException(InvalidStateException e) {
         return PropertyErrorFactory.of(e.getProperty(), e.getErrorCode(), e.getErrorMessage());
     }
 
