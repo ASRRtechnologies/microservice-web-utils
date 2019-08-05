@@ -7,7 +7,6 @@ import io.jsonwebtoken.Jwts;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import nl.asrr.microservice.webutils.amqp.FailableRabbitTemplate;
-import nl.asrr.microservice.webutils.exception.propertyerror.PropertyError;
 import nl.asrr.microservice.webutils.exception.propertyerror.factory.PropertyErrorFactory;
 import nl.asrr.microservice.webutils.io.HttpServletResponseWriter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +39,8 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
     private JwtDetailsProvider detailsProvider;
 
+    private TwoFactorProvider twoFactorProvider;
+
     /**
      * A secret key to validate the JWT.
      */
@@ -55,8 +56,9 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         this.mq = mq;
     }
 
-    public AuthorizationFilter(JwtDetailsProvider detailsProvider) {
+    public AuthorizationFilter(JwtDetailsProvider detailsProvider, TwoFactorProvider twoFactorProvider) {
         this.detailsProvider = detailsProvider;
+        this.twoFactorProvider = twoFactorProvider;
     }
 
     @PostConstruct
@@ -93,7 +95,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain chain
     ) throws IOException, ServletException {
-        String jwt = request.getHeader(authHeaderName);
+        var jwt = request.getHeader(authHeaderName);
 
         if (Strings.isNullOrEmpty(jwt)) {
             chain.doFilter(request, response);
@@ -101,9 +103,13 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         }
 
         try {
-            Claims claims = parse(jwt);
-            String userId = claims.getSubject();
-            List<SimpleGrantedAuthority> authorities = parseAuthorities(claims);
+            var claims = parse(jwt);
+            var userId = claims.getSubject();
+            var authorities = parseAuthorities(claims);
+
+            if (twoFactorProvider.twoFactorEnabled() && unvalidated2fa(authorities)) {
+                writeTokenError(response, "2fa has not been validated");
+            }
 
             SecurityContextHolder.getContext().setAuthentication(
                     new PreAuthenticatedAuthenticationToken(userId, null, authorities)
@@ -111,17 +117,21 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
             chain.doFilter(request, response);
         } catch (JwtException | IllegalArgumentException e) {
-            PropertyError propertyError = PropertyErrorFactory.of(
-                    "token",
-                    "Invalid",
-                    "auth token is invalid or expired"
-            );
-            HttpServletResponseWriter.write(
-                    response,
-                    HttpServletResponse.SC_FORBIDDEN,
-                    propertyError.toPrettyJson()
-            );
+            writeTokenError(response, "auth token is invalid or expired");
         }
+    }
+
+    private void writeTokenError(HttpServletResponse response, String message) throws IOException {
+        var propertyError = PropertyErrorFactory.of("token", "Invalid", message);
+        HttpServletResponseWriter.write(
+                response,
+                HttpServletResponse.SC_FORBIDDEN,
+                propertyError.toPrettyJson()
+        );
+    }
+
+    private boolean unvalidated2fa(List<SimpleGrantedAuthority> authorities) {
+        return authorities.stream().noneMatch(a -> a.getAuthority().equals(twoFactorProvider.validatedAuthorityName()));
     }
 
     private Claims parse(String jwt) {
