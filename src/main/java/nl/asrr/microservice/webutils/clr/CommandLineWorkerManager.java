@@ -13,7 +13,7 @@ public class CommandLineWorkerManager implements CommandLineRunner {
     private List<CommandLineWorker> commandLineWorkers;
 
     @Autowired
-    public CommandLineWorkerManager(List<CommandLineWorker> commandLineWorkers) {
+    public void setCommandLineWorkers(List<CommandLineWorker> commandLineWorkers) {
         this.commandLineWorkers = commandLineWorkers;
     }
 

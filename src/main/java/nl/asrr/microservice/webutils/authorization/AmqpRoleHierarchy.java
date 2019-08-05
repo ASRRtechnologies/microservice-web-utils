@@ -1,37 +1,53 @@
 package nl.asrr.microservice.webutils.authorization;
 
+import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import nl.asrr.microservice.webutils.amqp.FailableRabbitTemplate;
 import nl.asrr.microservice.webutils.amqp.model.auth.PersistentRole;
-import nl.asrr.microservice.webutils.executor.GuaranteedExecutor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Log4j2
+@Component
+@NoArgsConstructor
 public class AmqpRoleHierarchy implements RoleHierarchy {
 
-    private final FailableRabbitTemplate mq;
+    private FailableRabbitTemplate mq;
 
     private List<PersistentRole> roles;
 
-    public AmqpRoleHierarchy(FailableRabbitTemplate mq) {
+    private RoleHierarchyProvider roleHierarchyProvider;
+
+    @Autowired
+    public void setMq(FailableRabbitTemplate mq) {
         this.mq = mq;
+    }
+
+    public AmqpRoleHierarchy(RoleHierarchyProvider roleHierarchyProvider) {
+        this.roleHierarchyProvider = roleHierarchyProvider;
     }
 
     @PostConstruct
     private void init() {
+        if (roleHierarchyProvider == null) {
+            requestRoleHierarchy();
+        } else {
+            this.roles = roleHierarchyProvider.getRoles();
+        }
+    }
+
+    private void requestRoleHierarchy() {
         List<PersistentRole> roles;
         do {
+            log.info("requesting auth.getRoleHierarchy");
             roles = mq.sendFailableAndReceiveAsType("auth", "auth.getRoleHierarchy", "");
         } while (roles == null);
 
