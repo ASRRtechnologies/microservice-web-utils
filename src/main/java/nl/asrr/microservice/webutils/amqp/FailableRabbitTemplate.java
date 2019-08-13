@@ -1,13 +1,26 @@
 package nl.asrr.microservice.webutils.amqp;
 
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.stereotype.Component;
 
-@RequiredArgsConstructor
+@Component
+@NoArgsConstructor
 public class FailableRabbitTemplate {
 
-    private final RabbitTemplate rabbitTemplate;
+    private RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    public FailableRabbitTemplate(RabbitTemplate rabbitTemplate) {
+        this.rabbitTemplate = rabbitTemplate;
+    }
+
+    @Autowired
+    public void setRabbitTemplate(RabbitTemplate rabbitTemplate) {
+        this.rabbitTemplate = rabbitTemplate;
+    }
 
     public void send(String routingKey, Object message) {
         rabbitTemplate.convertAndSend(routingKey, message);
