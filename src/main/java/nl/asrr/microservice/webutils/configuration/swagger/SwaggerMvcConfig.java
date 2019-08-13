@@ -1,8 +1,11 @@
-package nl.asrr.microservice.webutils.configuration;
+package nl.asrr.microservice.webutils.configuration.swagger;
 
+import com.google.common.base.Predicate;
+import nl.asrr.microservice.webutils.configuration.WebMvcConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import springfox.documentation.RequestHandler;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
@@ -14,6 +17,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.io.File;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.net.URL;
 
@@ -32,14 +36,28 @@ public abstract class SwaggerMvcConfig extends WebMvcConfig {
 
     @Bean
     public Docket defaultDocket() {
+        return build(BASE_PACKAGE);
+    }
+
+    public Docket build(String baseControllerPackage) {
         return new Docket(DocumentationType.SWAGGER_2)
                 .select()
-                .apis(RequestHandlerSelectors.basePackage(BASE_PACKAGE))
+                .apis(excludeAnnotation(ExcludeControllerDoc.class))
+                .apis(RequestHandlerSelectors.basePackage(baseControllerPackage))
                 .apis(RequestHandlerSelectors.any())
                 .paths(PathSelectors.any())
                 .build()
                 .apiInfo(metaData())
                 .ignoredParameterTypes(ignoredModels);
+    }
+
+    private static Predicate<RequestHandler> excludeAnnotation(final Class<? extends Annotation> annotation) {
+        return handler -> handler == null || !handler.findControllerAnnotation(annotation).isPresent();
+    }
+
+    @Bean
+    public SwaggerController swaggerController() {
+        return new SwaggerController();
     }
 
     private ApiInfo metaData() {
