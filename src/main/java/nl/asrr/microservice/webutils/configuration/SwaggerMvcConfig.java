@@ -1,6 +1,7 @@
 package nl.asrr.microservice.webutils.configuration;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
@@ -9,27 +10,31 @@ import springfox.documentation.service.ApiInfo;
 import springfox.documentation.service.Contact;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 
+@EnableSwagger2
 public abstract class SwaggerMvcConfig extends WebMvcConfig {
 
     private static final Class[] ignoredModels = {
             InputStream.class, File.class, URI.class, URL.class
     };
 
+    private static final String BASE_PACKAGE = "nl.asrr.microservice";
+
     @Value("${spring.application.name}")
     private String applicationName;
 
-    public abstract Docket api();
 
-    public Docket build(String baseControllerPackage) {
+    @Bean
+    public Docket defaultDocket() {
         return new Docket(DocumentationType.SWAGGER_2)
                 .select()
-                .apis(RequestHandlerSelectors.basePackage(baseControllerPackage))
+                .apis(RequestHandlerSelectors.basePackage(BASE_PACKAGE))
                 .apis(RequestHandlerSelectors.any())
                 .paths(PathSelectors.any())
                 .build()
