@@ -37,56 +37,85 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
     private FailableRabbitTemplate mq;
 
-    private JwtDetailsProvider detailsProvider;
+    private JwtDetailsProvider jwtProvider;
 
     private TwoFactorProvider twoFactorProvider;
 
     /**
      * A secret key to validate the JWT.
      */
-    private byte[] secretKey;
+    private byte[] jwtSecretKey;
 
     /**
      * Name of the HTTP header that contains the JWT.
      */
     private String authHeaderName;
 
+    private boolean twoFactorEnabled;
+
+    private String unvalidated2faAuthorityName;
+
     @Autowired
     public void setMq(FailableRabbitTemplate mq) {
         this.mq = mq;
     }
 
-    public AuthorizationFilter(JwtDetailsProvider detailsProvider, TwoFactorProvider twoFactorProvider) {
-        this.detailsProvider = detailsProvider;
+    public AuthorizationFilter(JwtDetailsProvider jwtProvider, TwoFactorProvider twoFactorProvider) {
+        this.jwtProvider = jwtProvider;
         this.twoFactorProvider = twoFactorProvider;
     }
 
     @PostConstruct
     private void init() {
-        if (detailsProvider == null) {
+        if (jwtProvider == null) {
             requestJwtDetails();
         } else {
-            this.secretKey = detailsProvider.getSecretKey();
-            this.authHeaderName = detailsProvider.getAuthHeaderName();
+            this.jwtSecretKey = jwtProvider.getSecretKey();
+            this.authHeaderName = jwtProvider.getAuthHeaderName();
+        }
+
+        if (twoFactorProvider == null) {
+            requestTwoFactorDetails();
+        } else {
+            this.twoFactorEnabled = twoFactorProvider.enabled();
+            this.unvalidated2faAuthorityName = twoFactorProvider.unvalidatedAuthorityName();
         }
     }
 
     private void requestJwtDetails() {
         byte[] secretKey;
         do {
-            log.info("requesting auth.jwt.secretKey");
+            log.info("requesting auth.jwt.secretKey ...");
             secretKey = mq.sendFailableAndReceiveAsType("auth", "auth.jwt.secretKey", "");
         } while (secretKey == null);
 
         String authHeaderName;
         do {
-            log.info("requesting auth.jwt.authHeaderName");
+            log.info("requesting auth.jwt.authHeaderName ...");
             authHeaderName = mq.sendFailableAndReceiveAsType("auth", "auth.jwt.authHeaderName", "");
         } while (authHeaderName == null);
 
-        this.secretKey = secretKey;
+        this.jwtSecretKey = secretKey;
         this.authHeaderName = authHeaderName;
         log.info("successfully received jwt details");
+    }
+
+    private void requestTwoFactorDetails() {
+        Boolean twoFactorEnabled;
+        do {
+            log.info("requesting auth.2fa.enabled ...");
+            twoFactorEnabled = mq.sendFailableAndReceiveAsType("auth", "auth.2fa.enabled", "");
+        } while (twoFactorEnabled == null);
+
+        String unvalidated2faAuthorityName;
+        do {
+            log.info("requesting auth.2fa.unvalidatedAuthorityName ...");
+            unvalidated2faAuthorityName = mq.sendFailableAndReceiveAsType("auth", "auth.2fa.unvalidatedAuthorityName", "");
+        } while (unvalidated2faAuthorityName == null);
+
+        this.twoFactorEnabled = twoFactorEnabled;
+        this.unvalidated2faAuthorityName = unvalidated2faAuthorityName;
+        log.info("successfully received two-factor details");
     }
 
     @Override
@@ -107,7 +136,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             var userId = claims.getSubject();
             var authorities = parseAuthorities(claims);
 
-            if (twoFactorProvider.twoFactorEnabled() && unvalidated2fa(authorities)) {
+            if (twoFactorEnabled && unvalidated2fa(authorities)) {
                 writeTokenError(response, "2fa has not been validated");
             }
 
@@ -131,12 +160,12 @@ public class AuthorizationFilter extends OncePerRequestFilter {
     }
 
     private boolean unvalidated2fa(List<SimpleGrantedAuthority> authorities) {
-        return authorities.stream().noneMatch(a -> a.getAuthority().equals(twoFactorProvider.validatedAuthorityName()));
+        return authorities.stream().anyMatch(a -> a.getAuthority().equals(unvalidated2faAuthorityName));
     }
 
     private Claims parse(String jwt) {
         return Jwts.parser()
-                .setSigningKey(secretKey)
+                .setSigningKey(jwtSecretKey)
                 .parseClaimsJws(jwt)
                 .getBody();
     }

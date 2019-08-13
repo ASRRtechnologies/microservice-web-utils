@@ -2,8 +2,8 @@ package nl.asrr.microservice.webutils.authorization;
 
 public interface TwoFactorProvider {
 
-    boolean twoFactorEnabled();
+    boolean enabled();
 
-    String validatedAuthorityName();
+    String unvalidatedAuthorityName();
 
 }
