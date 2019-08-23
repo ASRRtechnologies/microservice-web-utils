@@ -24,6 +24,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,12 @@ import java.util.stream.Collectors;
 @Component
 @NoArgsConstructor
 public class AuthorizationFilter extends OncePerRequestFilter {
+
+    private static final String[] TWO_FACTOR_PATHS = {
+            "/2fa/generate-qr",
+            "/2fa/register",
+            "/2fa/validate"
+    };
 
     private FailableRabbitTemplate mq;
 
@@ -136,8 +143,9 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             var userId = claims.getSubject();
             var authorities = parseAuthorities(claims);
 
-            if (twoFactorEnabled && unvalidated2fa(authorities)) {
+            if (twoFactorEnabled && unvalidated2fa(authorities) && !isTwoFactorPath(request.getServletPath())) {
                 writeTokenError(response, "2fa has not been validated");
+                return;
             }
 
             SecurityContextHolder.getContext().setAuthentication(
@@ -146,7 +154,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
             chain.doFilter(request, response);
         } catch (JwtException | IllegalArgumentException e) {
-            writeTokenError(response, "auth token is invalid or expired");
+            writeTokenError(response, "access token is invalid or expired");
         }
     }
 
@@ -161,6 +169,10 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
     private boolean unvalidated2fa(List<SimpleGrantedAuthority> authorities) {
         return authorities.stream().anyMatch(a -> a.getAuthority().equals(unvalidated2faAuthorityName));
+    }
+
+    private boolean isTwoFactorPath(String path) {
+        return Arrays.asList(TWO_FACTOR_PATHS).contains(path);
     }
 
     private Claims parse(String jwt) {
