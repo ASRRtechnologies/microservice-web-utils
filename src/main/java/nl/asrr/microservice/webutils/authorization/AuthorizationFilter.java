@@ -144,22 +144,21 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             var authorities = parseAuthorities(claims);
 
             if (twoFactorEnabled && unvalidated2fa(authorities) && !isTwoFactorPath(request.getServletPath())) {
-                writeTokenError(response, "2fa has not been validated");
+                writeTokenError(response, "twoFactorAuth", "2fa has not been validated");
                 return;
             }
 
-            SecurityContextHolder.getContext().setAuthentication(
-                    new PreAuthenticatedAuthenticationToken(userId, null, authorities)
-            );
+            var authentication = new PreAuthenticatedAuthenticationToken(userId, null, authorities);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
             chain.doFilter(request, response);
         } catch (JwtException | IllegalArgumentException e) {
-            writeTokenError(response, "access token is invalid or expired");
+            writeTokenError(response, "token", "access token is invalid or expired");
         }
     }
 
-    private void writeTokenError(HttpServletResponse response, String message) throws IOException {
-        var propertyError = PropertyErrorFactory.of("token", "Invalid", message);
+    private void writeTokenError(HttpServletResponse response, String property, String message) throws IOException {
+        var propertyError = PropertyErrorFactory.of(property, "Invalid", message);
         HttpServletResponseWriter.write(
                 response,
                 HttpServletResponse.SC_FORBIDDEN,
