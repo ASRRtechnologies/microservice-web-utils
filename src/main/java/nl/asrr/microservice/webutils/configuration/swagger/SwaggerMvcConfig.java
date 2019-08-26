@@ -4,6 +4,7 @@ import com.google.common.base.Predicate;
 import nl.asrr.microservice.webutils.configuration.WebMvcConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import springfox.documentation.RequestHandler;
 import springfox.documentation.builders.ApiInfoBuilder;
@@ -25,7 +26,7 @@ import java.net.URL;
 public abstract class SwaggerMvcConfig extends WebMvcConfig {
 
     private static final Class[] ignoredModels = {
-            InputStream.class, File.class, URI.class, URL.class
+            InputStream.class, File.class, URI.class, URL.class, AuthenticationPrincipal.class
     };
 
     private static final String BASE_PACKAGE = "nl.asrr.microservice";
