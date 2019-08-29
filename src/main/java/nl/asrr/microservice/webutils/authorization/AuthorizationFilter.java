@@ -1,9 +1,7 @@
 package nl.asrr.microservice.webutils.authorization;
 
 import com.google.common.base.Strings;
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import nl.asrr.microservice.webutils.amqp.FailableRabbitTemplate;
@@ -25,10 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Log4j2
 @Order(1)
@@ -41,6 +36,8 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             "/2fa/register",
             "/2fa/validate"
     };
+
+    private JwtParser jwtParser;
 
     private FailableRabbitTemplate mq;
 
@@ -87,6 +84,8 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             this.twoFactorEnabled = twoFactorProvider.enabled();
             this.unvalidated2faAuthorityName = twoFactorProvider.unvalidatedAuthorityName();
         }
+
+        this.jwtParser = new JwtParser(jwtSecretKey);
     }
 
     private void requestJwtDetails() {
@@ -131,24 +130,22 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain chain
     ) throws IOException, ServletException {
-        var jwt = request.getHeader(authHeaderName);
+        var rawJwt = request.getHeader(authHeaderName);
 
-        if (Strings.isNullOrEmpty(jwt)) {
+        if (Strings.isNullOrEmpty(rawJwt)) {
             chain.doFilter(request, response);
             return;
         }
 
         try {
-            var claims = parse(jwt);
-            var userId = claims.getSubject();
-            var authorities = parseAuthorities(claims);
+            var jwt = jwtParser.parse(rawJwt);
 
-            if (twoFactorEnabled && unvalidated2fa(authorities) && !isTwoFactorPath(request.getServletPath())) {
+            if (twoFactorEnabled && unvalidated2fa(jwt.getAuthorities()) && !isTwoFactorPath(request.getServletPath())) {
                 writeTokenError(response, "twoFactorAuth", "2fa has not been validated");
                 return;
             }
 
-            var authentication = new PreAuthenticatedAuthenticationToken(userId, null, authorities);
+            var authentication = new PreAuthenticatedAuthenticationToken(jwt.getAccountId(), null, jwt.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             chain.doFilter(request, response);
@@ -172,30 +169,6 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
     private boolean isTwoFactorPath(String path) {
         return Arrays.asList(TWO_FACTOR_PATHS).contains(path);
-    }
-
-    private Claims parse(String jwt) {
-        return Jwts.parser()
-                .setSigningKey(jwtSecretKey)
-                .parseClaimsJws(jwt)
-                .getBody();
-    }
-
-    private List<SimpleGrantedAuthority> parseAuthorities(Claims claims) {
-        Collection<?> authoritiesMap
-                = claims.get("authorities", Collection.class);
-
-        return authoritiesMap.stream().map(
-                o -> {
-                    if (o instanceof Map) {
-                        Object value = ((Map) o).get("authority");
-                        if (value instanceof String) {
-                            return new SimpleGrantedAuthority((String) value);
-                        }
-                    }
-                    throw new IllegalArgumentException("invalid authority");
-                }
-        ).collect(Collectors.toList());
     }
 
 }
