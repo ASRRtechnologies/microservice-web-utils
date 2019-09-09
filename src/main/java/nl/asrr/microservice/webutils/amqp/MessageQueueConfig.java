@@ -17,8 +17,11 @@ public class MessageQueueConfig {
         return mq;
     }
 
-    public void queueWithBinding(TopicExchange exchange, String queueName) {
-        var queue = new Queue(queueName);
+    public void bindQueue(TopicExchange exchange, String queueName) {
+        bindQueue(exchange, new Queue(queueName));
+    }
+
+    public void bindQueue(TopicExchange exchange, Queue queue) {
         var routingKey = getRoutingKey(queue.getName());
 
         mq.declareQueue(queue);
