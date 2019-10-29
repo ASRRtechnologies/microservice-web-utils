@@ -5,27 +5,62 @@ import nl.asrr.microservice.webutils.exception.propertyerror.PropertyError;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Path;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class FieldPropertyErrorFactory {
+
+    public static PropertyError of(ConstraintViolationException e) {
+        var propertyErrors = new HashMap<String, ErrorDetails>();
+        for (ConstraintViolation<?> violation : e.getConstraintViolations()) {
+            var property = getProperty(violation.getPropertyPath());
+            if (property != null) {
+                var details = ErrorDetails.builder()
+                        .errorCode("Invalid")
+                        .errorMessage(violation.getMessage())
+                        .build();
+                propertyErrors.put(property, details);
+            }
+        }
+        return new PropertyError(propertyErrors);
+    }
+
+    /**
+     * Gets the name of a property of a {@link Path}.
+     *
+     * @param propertyPath the {@link Path} to get the property name of
+     * @return the name of the property
+     */
+    private static String getProperty(Path propertyPath) {
+        if (propertyPath != null) {
+            var propertyPathStr = propertyPath.toString();
+            if (!propertyPathStr.isEmpty() && propertyPathStr.lastIndexOf(".") != -1) {
+                return propertyPathStr.substring(propertyPathStr.lastIndexOf(".") + 1, propertyPath.toString().length());
+            }
+        }
+        return null;
+    }
 
     public static PropertyError of(MethodArgumentNotValidException e) {
         return FieldPropertyErrorFactory.of(e.getBindingResult().getFieldErrors());
     }
 
     public static PropertyError of(List<FieldError> fieldErrors) {
-        Map<String, ErrorDetails> map = new HashMap<>();
-        for (FieldError fieldError : fieldErrors) {
-            ErrorDetails details = ErrorDetails.builder()
+        var propertyErrors = new HashMap<String, ErrorDetails>();
+        for (var fieldError : fieldErrors) {
+            var property = fieldError.getField();
+            var details = ErrorDetails.builder()
                     .errorCode(fieldError.getCode())
                     .errorMessage(fieldError.getDefaultMessage())
                     .build();
+
             populateErrorDetails(details, fieldError.getArguments());
-            map.put(fieldError.getField(), details);
+            propertyErrors.put(property, details);
         }
-        return new PropertyError(map);
+        return new PropertyError(propertyErrors);
     }
 
     private static void populateErrorDetails(ErrorDetails details, Object[] errorArguments) {
