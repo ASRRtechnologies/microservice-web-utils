@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Component
+@Deprecated
 public class CommandLineWorkerManager implements CommandLineRunner {
 
     private List<CommandLineWorker> commandLineWorkers;
