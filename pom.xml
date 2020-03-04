@@ -13,7 +13,7 @@
     <name>Web Utils</name>
     <artifactId>microservice-web-utils</artifactId>
     <description>Microservice utilities</description>
-    <version>1.0.17</version>
+    <version>1.0.18</version>
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web -->
