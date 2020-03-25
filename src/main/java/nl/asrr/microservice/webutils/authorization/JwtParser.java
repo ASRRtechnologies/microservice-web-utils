@@ -1,6 +1,7 @@
 package nl.asrr.microservice.webutils.authorization;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -17,7 +18,7 @@ public class JwtParser {
         this.secretKey = secretKey;
     }
 
-    public ParsedJwt parse(String jwt) {
+    public ParsedJwt parse(String jwt) throws JwtException, IllegalArgumentException {
         var claims = Jwts.parser()
                 .setSigningKey(secretKey)
                 .parseClaimsJws(jwt)

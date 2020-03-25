@@ -22,8 +22,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 @Log4j2
 @Order(1)
@@ -31,97 +31,58 @@ import java.util.List;
 @NoArgsConstructor
 public class AuthorizationFilter extends OncePerRequestFilter {
 
-    private static final String[] TWO_FACTOR_PATHS = {
-            "/2fa/generate-qr",
-            "/2fa/register",
-            "/2fa/validate"
-    };
-
-    private JwtParser jwtParser;
+    private static final List<String> TOTP_PATHS = List.of(
+            "/totp/generate-qr",
+            "/totp/validate"
+    );
 
     private FailableRabbitTemplate mq;
 
-    private JwtDetailsProvider jwtProvider;
-
-    private TwoFactorProvider twoFactorProvider;
+    private volatile JwtParser jwtParser;
 
     /**
-     * A secret key to validate the JWT.
+     * Name of the HTTP header that contains the access token.
      */
-    private byte[] jwtSecretKey;
+    private volatile String accessTokenHeader;
 
-    /**
-     * Name of the HTTP header that contains the JWT.
-     */
-    private String authHeaderName;
+    private volatile String unvalidatedTotpAuthority;
 
-    private boolean twoFactorEnabled;
-
-    private String unvalidated2faAuthorityName;
+    private volatile boolean initialized;
 
     @Autowired
     public void setMq(FailableRabbitTemplate mq) {
         this.mq = mq;
     }
 
-    public AuthorizationFilter(JwtDetailsProvider jwtProvider, TwoFactorProvider twoFactorProvider) {
-        this.jwtProvider = jwtProvider;
-        this.twoFactorProvider = twoFactorProvider;
-    }
-
     @PostConstruct
-    private void init() {
-        if (jwtProvider == null) {
-            requestJwtDetails();
-        } else {
-            this.jwtSecretKey = jwtProvider.getSecretKey();
-            this.authHeaderName = jwtProvider.getAuthHeaderName();
-        }
-
-        if (twoFactorProvider == null) {
-            requestTwoFactorDetails();
-        } else {
-            this.twoFactorEnabled = twoFactorProvider.enabled();
-            this.unvalidated2faAuthorityName = twoFactorProvider.unvalidatedAuthorityName();
-        }
-
-        this.jwtParser = new JwtParser(jwtSecretKey);
+    public void init() {
+        Executors.newSingleThreadExecutor().submit(() -> {
+            requestTotpDetails();
+            requestAccessTokenCredentials();
+            initialized = true;
+        });
     }
 
-    private void requestJwtDetails() {
-        byte[] secretKey;
+    private void requestAccessTokenCredentials() {
+        do {
+            log.info("requesting auth.jwt.accessTokenHeader ...");
+            accessTokenHeader = mq.sendFailableAndReceiveAsType("auth", "auth.jwt.accessTokenHeader", "");
+        } while (accessTokenHeader == null);
+
         do {
             log.info("requesting auth.jwt.secretKey ...");
-            secretKey = mq.sendFailableAndReceiveAsType("auth", "auth.jwt.secretKey", "");
-        } while (secretKey == null);
-
-        String authHeaderName;
-        do {
-            log.info("requesting auth.jwt.authHeaderName ...");
-            authHeaderName = mq.sendFailableAndReceiveAsType("auth", "auth.jwt.authHeaderName", "");
-        } while (authHeaderName == null);
-
-        this.jwtSecretKey = secretKey;
-        this.authHeaderName = authHeaderName;
-        log.info("successfully received jwt details");
+            var secretKey = mq.<byte[]>sendFailableAndReceiveAsType("auth", "auth.jwt.secretKey", "");
+            jwtParser = new JwtParser(secretKey);
+        } while (jwtParser == null);
+        log.info("successfully received jwt credentials");
     }
 
-    private void requestTwoFactorDetails() {
-        Boolean twoFactorEnabled;
+    private void requestTotpDetails() {
         do {
-            log.info("requesting auth.2fa.enabled ...");
-            twoFactorEnabled = mq.sendFailableAndReceiveAsType("auth", "auth.2fa.enabled", "");
-        } while (twoFactorEnabled == null);
-
-        String unvalidated2faAuthorityName;
-        do {
-            log.info("requesting auth.2fa.unvalidatedAuthorityName ...");
-            unvalidated2faAuthorityName = mq.sendFailableAndReceiveAsType("auth", "auth.2fa.unvalidatedAuthorityName", "");
-        } while (unvalidated2faAuthorityName == null);
-
-        this.twoFactorEnabled = twoFactorEnabled;
-        this.unvalidated2faAuthorityName = unvalidated2faAuthorityName;
-        log.info("successfully received two-factor details");
+            log.info("requesting auth.totp.unvalidatedAuthorityName ...");
+            unvalidatedTotpAuthority = mq.sendFailableAndReceiveAsType("auth", "auth.totp.unvalidatedAuthorityName", "");
+        } while (unvalidatedTotpAuthority == null);
+        log.info("successfully received totp details");
     }
 
     @Override
@@ -130,18 +91,35 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain chain
     ) throws IOException, ServletException {
-        var rawJwt = request.getHeader(authHeaderName);
+        if (!initialized) {
+            HttpServletResponseWriter.write(
+                    response,
+                    HttpServletResponse.SC_SERVICE_UNAVAILABLE,
+                    "AuthorizationFilter has not been initialized"
+            );
+            return;
+        }
 
-        if (Strings.isNullOrEmpty(rawJwt)) {
+        var accessToken = request.getHeader(accessTokenHeader.toLowerCase());
+        if (Strings.isNullOrEmpty(accessToken)) {
             chain.doFilter(request, response);
             return;
         }
 
-        try {
-            var jwt = jwtParser.parse(rawJwt);
+        initializeSecurityContext(request, response, chain, accessToken);
+    }
 
-            if (twoFactorEnabled && unvalidated2fa(jwt.getAuthorities()) && !isTwoFactorPath(request.getServletPath())) {
-                writeTokenError(response, "twoFactorAuth", "2fa has not been validated");
+    private void initializeSecurityContext(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain chain,
+            String accessToken
+    ) throws IOException, ServletException {
+        try {
+            var jwt = jwtParser.parse(accessToken);
+
+            if (containsUnvalidatedTotp(jwt.getAuthorities()) && notTotpPath(request.getServletPath())) {
+                writeTokenError(response, "totp", "totp has not been validated");
                 return;
             }
 
@@ -150,8 +128,16 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
             chain.doFilter(request, response);
         } catch (JwtException | IllegalArgumentException e) {
-            writeTokenError(response, "token", "access token is invalid or expired");
+            writeTokenError(response, "accessToken", "access token is invalid or has expired");
         }
+    }
+
+    private boolean containsUnvalidatedTotp(List<SimpleGrantedAuthority> authorities) {
+        return authorities.stream().anyMatch(a -> a.getAuthority().equals(unvalidatedTotpAuthority));
+    }
+
+    private boolean notTotpPath(String path) {
+        return !TOTP_PATHS.contains(path);
     }
 
     private void writeTokenError(HttpServletResponse response, String property, String message) throws IOException {
@@ -161,14 +147,6 @@ public class AuthorizationFilter extends OncePerRequestFilter {
                 HttpServletResponse.SC_FORBIDDEN,
                 propertyError.toPrettyJson()
         );
-    }
-
-    private boolean unvalidated2fa(List<SimpleGrantedAuthority> authorities) {
-        return authorities.stream().anyMatch(a -> a.getAuthority().equals(unvalidated2faAuthorityName));
-    }
-
-    private boolean isTwoFactorPath(String path) {
-        return Arrays.asList(TWO_FACTOR_PATHS).contains(path);
     }
 
 }

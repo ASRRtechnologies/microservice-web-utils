@@ -1,6 +1,5 @@
 package nl.asrr.microservice.webutils.cosmosdb;
 
-import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -12,9 +11,13 @@ import javax.persistence.Id;
 @Log4j2
 public class CosmosMongoRepositoryImpl<T, ID> implements CosmosMongoRepository<T, ID> {
 
-    @Setter
-    private MongoTemplate mongoTemplate;
+    private final MongoTemplate mongoTemplate;
 
+    public CosmosMongoRepositoryImpl(MongoTemplate mongoTemplate) {
+        this.mongoTemplate = mongoTemplate;
+    }
+
+    @Override
     public boolean cosmosUpdate(T entity) {
         return mongoTemplate.upsert(createQuery(entity), createUpdate(entity), entity.getClass())
                 .wasAcknowledged();
