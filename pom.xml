@@ -4,18 +4,20 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>nl.asrr.microservice</groupId>
-        <artifactId>microservice-dependencies</artifactId>
-        <version>[1.0, 999999)</version>
-    </parent>
 
     <name>Web Utils</name>
+    <groupId>nl.asrr.microservice</groupId>
     <artifactId>microservice-web-utils</artifactId>
     <description>Microservice utilities</description>
     <version>1.0.19</version>
 
     <dependencies>
+        <dependency>
+            <groupId>nl.asrr.microservice</groupId>
+            <artifactId>microservice-dependencies</artifactId>
+            <version>1.0.8</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
