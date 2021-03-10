@@ -126,14 +126,14 @@
         </repository>
     </distributionManagement>
 
-<!--    <repositories>-->
-<!--        <repository>-->
-<!--            <id>github</id>-->
-<!--            <url>https://maven.pkg.github.com/ASRRtechnologies/*</url>-->
-<!--            <snapshots>-->
-<!--                <enabled>true</enabled>-->
-<!--            </snapshots>-->
-<!--        </repository>-->
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/ASRRtechnologies/*</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
 <!--        <repository>-->
 <!--            <id>nexus-release</id>-->
 <!--            <name>Release</name>-->
@@ -144,6 +144,6 @@
 <!--            <name>Snapshot</name>-->
 <!--            <url>http://nexus.asrr-tech.com:8081/repository/maven-snapshots</url>-->
 <!--        </repository>-->
-<!--    </repositories>-->
+    </repositories>
 
 </project>
