@@ -8,6 +8,7 @@
         <groupId>nl.asrr.microservice</groupId>
         <artifactId>microservice-dependencies</artifactId>
         <version>[1.0, 999999)</version>
+        <relativePath />
     </parent>
 
     <name>Web Utils</name>
