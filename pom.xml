@@ -129,7 +129,7 @@
     <repositories>
         <repository>
             <id>github</id>
-            <url>https://maven.pkg.github.com/ASRRtechnologies/*</url>
+            <url>https://maven.pkg.github.com/ASRRtechnologies/microservice-dependencies</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
