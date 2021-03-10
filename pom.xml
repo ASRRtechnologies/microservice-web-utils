@@ -116,18 +116,32 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/ASRRtechnologies/microservice-web-utils</url>
+        </repository>
+    </distributionManagement>
 
-    <repositories>
-        <repository>
-            <id>nexus-release</id>
-            <name>Release</name>
-            <url>http://nexus.asrr-tech.com:8081/repository/maven-releases/</url>
-        </repository>
-        <repository>
-            <id>nexus-snapshot</id>
-            <name>Snapshot</name>
-            <url>http://nexus.asrr-tech.com:8081/repository/maven-snapshots</url>
-        </repository>
-    </repositories>
+<!--    <repositories>-->
+<!--        <repository>-->
+<!--            <id>github</id>-->
+<!--            <url>https://maven.pkg.github.com/ASRRtechnologies/*</url>-->
+<!--            <snapshots>-->
+<!--                <enabled>true</enabled>-->
+<!--            </snapshots>-->
+<!--        </repository>-->
+<!--        <repository>-->
+<!--            <id>nexus-release</id>-->
+<!--            <name>Release</name>-->
+<!--            <url>http://nexus.asrr-tech.com:8081/repository/maven-releases/</url>-->
+<!--        </repository>-->
+<!--        <repository>-->
+<!--            <id>nexus-snapshot</id>-->
+<!--            <name>Snapshot</name>-->
+<!--            <url>http://nexus.asrr-tech.com:8081/repository/maven-snapshots</url>-->
+<!--        </repository>-->
+<!--    </repositories>-->
 
 </project>
