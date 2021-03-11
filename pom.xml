@@ -7,13 +7,13 @@
     <parent>
         <groupId>nl.asrr.microservice</groupId>
         <artifactId>microservice-dependencies</artifactId>
-        <version>1.0.10</version>
+        <version>1.1.0</version>
     </parent>
 
     <name>Web Utils</name>
     <artifactId>microservice-web-utils</artifactId>
     <description>Microservice utilities</description>
-    <version>1.0.19</version>
+    <version>1.1.0</version>
 
     <properties>
         <java.version>11</java.version>
@@ -139,16 +139,6 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
-<!--        <repository>-->
-<!--            <id>nexus-release</id>-->
-<!--            <name>Release</name>-->
-<!--            <url>http://nexus.asrr-tech.com:8081/repository/maven-releases/</url>-->
-<!--        </repository>-->
-<!--        <repository>-->
-<!--            <id>nexus-snapshot</id>-->
-<!--            <name>Snapshot</name>-->
-<!--            <url>http://nexus.asrr-tech.com:8081/repository/maven-snapshots</url>-->
-<!--        </repository>-->
     </repositories>
 
 
